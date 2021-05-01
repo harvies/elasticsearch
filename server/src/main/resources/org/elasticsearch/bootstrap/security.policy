@@ -1,66 +1,19 @@
-/*
- * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License
- * 2.0 and the Server Side Public License, v 1; you may not use this file except
- * in compliance with, at your election, the Elastic License 2.0 or the Server
- * Side Public License, v 1.
- */
-
-// Default security policy file.
-// On startup, BootStrap reads environment and adds additional permissions
-// for configured paths and network binding to these.
-
-//// SecurityManager impl:
-//// Must have all permissions to properly perform access checks
-
-grant codeBase "${codebase.elasticsearch-secure-sm}" {
+// file start
+grant {
+  permission java.lang.RuntimePermission "createClassLoader";
+  permission javax.management.MBeanTruxtPermission "register";
+  permission javax.management.MBeanServerPermission "createMBeanServer";
   permission java.security.AllPermission;
-};
-
-//// Elasticsearch core:
-//// These are only allowed inside the server jar, not in plugins
-grant codeBase "${codebase.elasticsearch}" {
-  // needed for loading plugins which may expect the context class loader to be set
   permission java.lang.RuntimePermission "setContextClassLoader";
-};
-
-//// Very special jar permissions:
-//// These are dangerous permissions that we don't want to grant to everything.
-
-grant codeBase "${codebase.lucene-core}" {
-  // needed to allow MMapDirectory's "unmap hack" (die unmap hack, die)
-  // java 8 package
   permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
   // java 9 "package"
   permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.ref";
   permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
   // NOTE: also needed for RAMUsageEstimator size calculations
   permission java.lang.RuntimePermission "accessDeclaredMembers";
-};
-
-grant codeBase "${codebase.lucene-misc}" {
-  // needed to allow shard shrinking to use hard-links if possible via lucenes HardlinkCopyDirectoryWrapper
   permission java.nio.file.LinkPermission "hard";
-};
-
-grant codeBase "${codebase.elasticsearch-plugin-classloader}" {
-  // needed to create the classloader which allows plugins to extend other plugins
-  permission java.lang.RuntimePermission "createClassLoader";
-};
-
-grant codeBase "${codebase.jna}" {
-  // for registering native methods
   permission java.lang.RuntimePermission "accessDeclaredMembers";
-};
-
-//// Everything else:
-
-grant {
-  // needed by vendored Guice
   permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.vm.annotation";
-
-  // checked by scripting engines, and before hacks and other issues in
-  // third party code, to safeguard these against unprivileged code like scripts.
   permission org.elasticsearch.SpecialPermission;
 
   // Allow host/ip name service lookups
@@ -155,4 +108,7 @@ grant {
 
   // system memory on Linux systems affected by JDK bug (#66629)
   permission java.io.FilePermission "/proc/meminfo", "read";
+
+  permission java.lang.management.ManagementPermission "monitor";
 };
+// file end
